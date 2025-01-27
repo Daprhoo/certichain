@@ -1,4 +1,4 @@
-import 'package:certichain/blockchain_service.dart'; 
+import 'package:certichain/blockchain_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -6,8 +6,6 @@ import 'package:crypto/crypto.dart';
 void main() {
   runApp(MyApp());
 }
-
-final String rpcUrl = "https://sepolia.infura.io/v3/aabc3e9ea79d47b49e17560ac7571c86";
 
 class Certificate {
   final String ownerName;
@@ -67,7 +65,6 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// Sertifika Listesi Sayfası
 class CertificateListPage extends StatefulWidget {
   @override
   _CertificateListPageState createState() => _CertificateListPageState();
@@ -77,7 +74,8 @@ class _CertificateListPageState extends State<CertificateListPage> {
   final BlockchainService _blockchainService = BlockchainService();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  String? _latestBlockInfo;
+  List<Map<String, dynamic>> issuedCertificates = [];
+  Map<String, dynamic>? lastIssuedCertificate;
 
   @override
   void initState() {
@@ -88,17 +86,11 @@ class _CertificateListPageState extends State<CertificateListPage> {
   Future<void> _initializeBlockchain() async {
     try {
       await _blockchainService.initContract();
-      final blockNumber = await _blockchainService.getLatestBlockNumber();
-      debugPrint("Connected to Sepolia. Latest block: $blockNumber");
-
-      final blockInfo = await _blockchainService.getBlockByNumber(blockNumber);
-      setState(() {
-        _latestBlockInfo = blockInfo;
-      });
+      debugPrint("Connected to Sepolia.");
     } catch (e) {
       debugPrint("Error initializing blockchain: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error initializing blockchain: $e')),
+        SnackBar(content: Text('Blockchain başlatılırken hata oluştu: $e')),
       );
     }
   }
@@ -126,9 +118,35 @@ class _CertificateListPageState extends State<CertificateListPage> {
     try {
       final txHash = await _blockchainService.issueCertificate(certHash);
       debugPrint("Certificate issued. Transaction hash: $txHash");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sertifika yayınlandı! TX Hash: $txHash')),
-      );
+
+      final receipt = await _blockchainService.getTransactionReceipt(txHash);
+      
+      if (receipt != null && receipt['blockNumber'] != null) {
+        final blockNumber = receipt['blockNumber'] as int;
+        final blockInfo = await _blockchainService.getBlockByNumber(blockNumber);
+        
+        setState(() {
+          issuedCertificates.add({
+            'ownerName': ownerName,
+            'certHash': certHash,
+            'blockNumber': blockNumber,
+            'blockInfo': blockInfo,
+          });
+
+          lastIssuedCertificate = {
+            'ownerName': ownerName,
+            'certHash': certHash,
+            'blockNumber': blockNumber,
+            'blockInfo': blockInfo,
+          };
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sertifika yayınlandı! Blok: $blockNumber')),
+        );
+      } else {
+        throw Exception("Invalid block number in transaction receipt");
+      }
     } catch (e) {
       debugPrint("Error issuing certificate: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -161,14 +179,52 @@ class _CertificateListPageState extends State<CertificateListPage> {
               onPressed: _issueCertificate,
               child: Text('Sertifika Yayınla'),
             ),
-            if (_latestBlockInfo != null)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'Latest Block Info: $_latestBlockInfo',
-                  textAlign: TextAlign.center,
+            SizedBox(height: 20),
+            if (lastIssuedCertificate != null)
+              Card(
+                margin: EdgeInsets.symmetric(vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Son Sertifika Sahibi: ${lastIssuedCertificate!['ownerName']}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('Sertifika Hash: ${lastIssuedCertificate!['certHash']}'),
+                      Text('Blok Numarası: ${lastIssuedCertificate!['blockNumber']}'),
+                      Text('Blok Detayları: ${lastIssuedCertificate!['blockInfo']}'),
+                    ],
+                  ),
                 ),
               ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: issuedCertificates.length,
+                itemBuilder: (context, index) {
+                  final cert = issuedCertificates[index];
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Sertifika Sahibi: ${cert['ownerName']}',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text('Sertifika Hash: ${cert['certHash']}'),
+                          Text('Blok Numarası: ${cert['blockNumber']}'),
+                          Text('Blok Detayları: ${cert['blockInfo']}'),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
