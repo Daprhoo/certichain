@@ -15,7 +15,6 @@ class BlockchainService {
     _credentials = EthPrivateKey.fromHex(privateKey);
   }
 
-  /// Initializes the contract using the ABI and contract address
   Future<void> initContract() async {
     try {
       String abi = '''
@@ -54,7 +53,6 @@ class BlockchainService {
     }
   }
 
-  /// Issues a certificate by sending a transaction to the contract
   Future<String> issueCertificate(String certHash) async {
     if (certHash.isEmpty) {
       throw Exception("Certificate hash cannot be empty.");
@@ -71,7 +69,7 @@ class BlockchainService {
           function: function,
           parameters: [certHash],
         ),
-        chainId: 11155111, // Sepolia chainId
+        chainId: 11155111, // Sepolia chain ID
       );
 
       debugPrint("Certificate issued. Transaction hash: $result");
@@ -82,7 +80,6 @@ class BlockchainService {
     }
   }
 
-  /// Verifies a certificate by calling the smart contract function
   Future<Map<String, dynamic>> verifyCertificate(String certHash) async {
     if (certHash.isEmpty) {
       throw Exception("Certificate hash cannot be empty.");
@@ -111,7 +108,6 @@ class BlockchainService {
     }
   }
 
-  /// Gets the latest block number on the blockchain
   Future<int> getLatestBlockNumber() async {
     try {
       final blockNumber = await _client.getBlockNumber();
@@ -122,15 +118,13 @@ class BlockchainService {
       throw Exception("Error fetching latest block number: $e");
     }
   }
-/// Gets detailed information of a block by its number
 Future<String> getBlockByNumber(int blockNumber) async {
   try {
-    // Fetch block details via RPC call
     final blockData = await _client.makeRPCCall(
       'eth_getBlockByNumber', 
       [
-        '0x${blockNumber.toRadixString(16)}', // Convert to hex
-        true // Include full transaction details
+        '0x${blockNumber.toRadixString(16)}', 
+        true 
       ]
     );
 

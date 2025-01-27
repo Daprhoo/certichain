@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart'; // HTTP bağlantısı için
+import 'package:http/http.dart'; 
 import 'package:web3dart/web3dart.dart';
 
 class BlockchainService {
@@ -16,7 +16,6 @@ class BlockchainService {
   }
 
   Future<void> initContract() async {
-    // CertiChain sözleşmesinin ABI'sini ekle
     String abi = '''
       [
         {
