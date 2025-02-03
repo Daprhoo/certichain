@@ -3,8 +3,8 @@ import 'package:http/http.dart';
 import 'package:web3dart/web3dart.dart';
 
 class BlockchainService {
-  final String rpcUrl = "https://sepolia.infura.io/v3/aabc3e9ea79d47b49e17560ac7571c86";
-  final String privateKey = "c6c1e1a155a6322c3ee1d22b2af9a0ac7210a08db1344f64b2d24e6160215168";
+  final String rpcUrl = "replace here with sepholi url it changes before making repo public";
+  final String privateKey = "replace here with your private key it changes before making repo public";
 
   late Web3Client _client;
   late EthPrivateKey _credentials;
@@ -40,7 +40,7 @@ class BlockchainService {
         ]
       ''';
 
-      String contractAddress = "0xeee005B3E73ff8a6130A31f94B3Ce9A13df1282F";
+      String contractAddress = "replace here with your contract adress it changes before making repo public";
       _contract = DeployedContract(
         ContractAbi.fromJson(abi, "CertiChain"),
         EthereumAddress.fromHex(contractAddress),
